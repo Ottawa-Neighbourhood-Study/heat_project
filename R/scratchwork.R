@@ -1,7 +1,9 @@
 library(sf)
 library(dplyr)
 library(ggplot2)
-coping_spaces <- readr::read_csv("data/All_Coping_Spaces_07-04-2024.csv")
+
+coping_spaces <- readr::read_csv("data/All_Coping_Spaces_07-04-2024.csv") |>
+  dplyr::select(-geometry) |> suppressMessages()
 
 coping_spaces_shp <- coping_spaces |>
   sf::st_as_sf(coords=c("lon","lat"), crs="WGS84")
@@ -45,3 +47,98 @@ valhallr::map_isochrone(iso)
 arenas$Parent_ID |> unique() |> length()
 
 phhs
+
+
+test <- coping_spaces |>
+  dplyr::select(-geometry) |>
+  #dplyr::group_by(Parent_ID) |>
+  tidyr::nest(data = -Parent_ID) |>
+  head() |>
+  dplyr::mutate(isochrones = purrr::map(
+    data,
+    function(x) {
+      drive <- valhallr::isochrone(from = x, costing = "auto", contours = c(10, 15), hostname = "192.168.0.150")
+      walk  <- valhallr::isochrone(from = x, costing = "pedestrian", contours = 10, hostname = "192.168.0.150")
+
+      dplyr::bind_rows(drive, walk) |>
+        dplyr::select(-fill.opacity, -fillColor, -opacity, -fill, -fillOpacity, -color)
+    }
+  )) |>
+  tidyr::unnest(isochrones) |>
+  tidyr::unnest(data)
+
+test |>
+  tidyr::unnest(isochrones) |>
+  tidyr::unnest(data)
+
+library(ggplot2)
+
+test |>
+  tidyr::unnest(isochrones) |>
+  tidyr::unnest(data) |>
+  sf::st_as_sf() |>
+  ggplot() + geom_sf(aes(fill=costing))
+
+
+
+
+coping_spaces |>
+  head(n=10) |>
+  tidyr::nest(data = -Parent_ID) |>
+  dplyr::mutate(isochrones = purrr::map(
+    data,
+    function(x) {
+
+      drive <- valhallr::isochrone(from = x, costing = "auto", contours = c(10, 15), hostname = "192.168.0.150")
+      walk  <- valhallr::isochrone(from = x, costing = "pedestrian", contours = 10, hostname = "192.168.0.150")
+
+      dplyr::bind_rows(drive, walk) |>
+        dplyr::select(-fill.opacity, -fillColor, -opacity, -fill, -fillOpacity, -color)
+    },
+    .progress = TRUE
+  ))
+
+
+
+
+### travel distance analysis
+
+calculate_phh_coping_travel <- function(coping_spaces) {
+  tos <- coping_spaces |>
+    dplyr::select(Parent_ID, lon, lat)
+
+  froms <- neighbourhoodstudy::ottawa_phhs |>
+    dplyr::bind_cols(sf::st_coordinates(neighbourhoodstudy::ottawa_phhs)) |>
+    sf::st_drop_geometry() |>
+    dplyr::select(phh_id, lat=Y, lon=X) |>
+    head(n=10)
+
+
+  # errors <- c()
+  results <- dplyr::tibble()
+  to_batch_size <- 100
+  to_batches <- ceiling(nrow(tos)/to_batch_size)
+
+
+  # also batch the tos
+  for (i in 0:(to_batches-1)){
+    message(i+1, "/", to_batches)
+
+    batch_rows <- ((i * to_batch_size) + 1):min(((i+1)* to_batch_size), nrow(tos))
+
+    z <- tryCatch(valhallr::od_table(froms = froms, from_id_col = "phh_id",
+                                     tos = tos[batch_rows,], to_id_col = "Parent_ID",
+                                     batch_size=100,
+                                     hostname = "192.168.0.150", verbose = TRUE))
+
+    if ("try-error" %in% class(z) ){
+      message(i," ERROR")
+      errors <- c(errors, i)
+    } else {
+      results <- dplyr::bind_rows(results, z)
+    }
+
+  } # end for
+
+  results
+}

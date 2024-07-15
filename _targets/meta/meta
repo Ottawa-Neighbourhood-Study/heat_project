@@ -1,0 +1,7 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+.Random.seed|object|ed432c776aabda54|||||||||||||||
+calculate_coping_isochrones|function|547ddfb5f4101063|||||||||||||||
+calculate_phh_coping_travel|function|b531e47f3357e937|||||||||||||||
+coping_isochrones|stem|2c724fdca94fe229|82059134ae8f60af|74c7fbd5a2ec154b|900682451||t19916.8247611715s|df6d0773e2cf0fd1|73691456|rds|local|vector|||1121.052|1m22mThere was 1 warning in dplyrmutate.1m22m36mℹ39m In argument isochrones  purrrmap....Caused by warning33m39m multiple methods tables found for elide|
+coping_spaces|stem|5cf6d658ac79fc74|fe02729c6111f9d3|8e35c64e7f70aac4|1584425116||t19916.7978786746s|35f99496942b8cda|103170|rds|local|vector|||0.274||
+load_coping_spaces|function|cccba5ac5c43e409|||||||||||||||
