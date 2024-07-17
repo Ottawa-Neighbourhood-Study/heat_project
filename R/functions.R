@@ -111,13 +111,16 @@ facility_coverage_one <- function(facility,
                                   phhs,
                                   coping_isochrones,
                                   coping_spaces,
-                                  rurality_filter = c("Urban", "Rural", "Suburban")) {
+                                  rurality_filter = c("Urban", "Rural", "Suburban Walk", "Suburban Drive")) {
 
   message(rurality_filter, "- ", facility)
 
 
+  # extract the name of the rurality if it's a two-word filter parameter
+  rurality_name <- stringr::str_extract(rurality_filter, ".*?(?=\\s|$)")
+
   phhs <- phhs |>
-    dplyr::filter(rurality == rurality_filter)
+    dplyr::filter(tolower(rurality) == tolower(rurality_name))
 
 
   isos <- coping_isochrones |>
@@ -125,30 +128,35 @@ facility_coverage_one <- function(facility,
     dplyr::select(facility_type, costing, metric, contour) |>
     dplyr::filter(facility_type == facility )
 
-  sf::sf_use_s2(FALSE)
+
+
   # differential filtering based on rurality
   if (rurality_filter == "Urban"){
-    isos <- isos |>
-      dplyr::filter(costing == "pedestrian") |>
-      sf::st_union() |>
-      sf::st_make_valid() |>
-      suppressMessages()
+    costing_name <- "pedestrian"
+    travel_limit <- 10
   } else if (rurality_filter == "Rural"){
-    isos <- isos |>
-      dplyr::filter(costing == "auto",
-                    contour == 15) |>
-      sf::st_union() |>
-      sf::st_make_valid() |>
-      suppressMessages()
-  } else if (rurality_filter == "Suburban") {
-    isos <- isos |>
-      sf::st_make_valid() |>
-      dplyr::filter(contour == 10) |> # 10-minute walk or 10-minute drive
-      sf::st_make_valid() |>
-      sf::st_union() |>
-      sf::st_make_valid() |>
-      suppressMessages()
+    costing_name <- "auto"
+    travel_limit <- 15
+  } else if (rurality_filter == "Suburban Walk") {
+    costing_name <- "pedestrian"
+    travel_limit <- 10
+  } else if (rurality_filter == "Suburban Drive") {
+    costing_name <- "auto"
+    travel_limit <- 10
+  } else {
+    stop ("invalid rurality_filter parameter")
   }
+
+  # filter isochrones based on conditions
+  # (switch spherical geometry off/on so that the results are valid and fast)
+  sf::sf_use_s2(FALSE)
+
+  isos <- isos |>
+    dplyr::filter(costing == costing_name,
+                  contour == travel_limit) |>
+    sf::st_union() |>
+    sf::st_make_valid() |>
+    suppressMessages()
 
   sf::sf_use_s2(TRUE)
 
@@ -157,14 +165,16 @@ facility_coverage_one <- function(facility,
 
   # phhs
 
-  #ggplot() + geom_sf(data = isos) + geom_sf(data = phhs, mapping = aes(colour = covered))
+  #ggplot2::ggplot() + ggplot2::geom_sf(data = isos) + ggplot2::geom_sf(data = phhs, mapping = ggplot2::aes(colour = covered))
 
   phhs |>
     sf::st_drop_geometry() |>
     dplyr::group_by(ONS_ID, ONS_Name, rurality) |>
     dplyr::summarise(pct_covered = sum(dbpop * covered) / sum(dbpop),
                      .groups = "drop") |>
-    dplyr::mutate(facility_type = facility)
+    dplyr::mutate(facility_type = facility,
+                  costing = costing_name,
+                  travel_limit_mins = travel_limit)
 
 }
 
@@ -177,8 +187,8 @@ get_phhs <- function(ons_shp) {
 }
 
 
-save_pct_coverage <- function(facility_rural_coverage, facility_suburban_coverage, facility_urban_coverage){
-  all <- dplyr::bind_rows(facility_rural_coverage, facility_suburban_coverage, facility_urban_coverage)
+save_pct_coverage <- function(facility_rural_coverage, facility_suburban_drive_coverage, facility_suburban_walk_coverage, facility_urban_coverage){
+  all <- dplyr::bind_rows(facility_rural_coverage, facility_suburban_drive_coverage, facility_suburban_walk_coverage, facility_urban_coverage)
   readr::write_csv(all, paste0("output/analysis_1_pct_coverage-",Sys.Date(),".csv"))
   TRUE
 }
