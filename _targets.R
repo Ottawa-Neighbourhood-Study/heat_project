@@ -4,10 +4,10 @@ library(dplyr)
 library(ggplot2)
 library(leaflet)
 
-source ("R/functions.R")
+source("R/functions.R")
 
 # disable s2 so that isochrones will be valid
-#sf::sf_use_s2(FALSE)
+# sf::sf_use_s2(FALSE)
 
 
 list(
@@ -23,9 +23,31 @@ list(
   targets::tar_target(facility_rural_coverage, get_facility_coverage(facilities, phhs, coping_isochrones, coping_spaces, rurality = "Rural")),
   targets::tar_target(facility_suburban_walk_coverage, get_facility_coverage(facilities, phhs, coping_isochrones, coping_spaces, rurality = "Suburban Walk")),
   targets::tar_target(facility_suburban__drivecoverage, get_facility_coverage(facilities, phhs, coping_isochrones, coping_spaces, rurality = "Suburban Drive")),
-
-
   targets::tar_target(save_pct_coverage_results, save_pct_coverage(facility_rural_coverage, facility_suburban_walk_coverage, facility_suburban__drivecoverage, facility_urban_coverage)),
 
+
+  ## ANALYSIS 2
+  targets::tar_target(db_centroids_snapped, get_snapped_db_centroids()),
+  targets::tar_target(
+    db_top_bottom_distances,
+    get_db_top_bottom_distances(
+      db_centroids_snapped,
+      coping_spaces,
+      facilities_top = c(
+        "splash_pad",
+        "cmmt_centre",
+        "library",
+        "mall",
+        "shade_structure"
+      ),
+      facilities_bottom = c(
+        "fastfood",
+        "museum",
+        "gallery",
+        "arena",
+        "movie_theatre"
+      )
+    )
+  ),
   NULL
 )
