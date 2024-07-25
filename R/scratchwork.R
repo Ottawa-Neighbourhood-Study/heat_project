@@ -189,3 +189,28 @@ get_hood_times <- function(coping_spaces, db_top_bottom_distances) {
     )
   results
 }
+
+
+
+## check results
+
+targets::tar_load(hood_times)
+targets::tar_load(ons_shp)
+
+test_type <- "movie_theatre"
+
+test_ons_shp <- dplyr::left_join(
+  ons_shp,
+  dplyr::filter(hood_times, facility_type == test_type)
+)
+
+test_spaces_shp <- coping_spaces |>
+  dplyr::filter(facility_type == test_type) |>
+  dplyr::select(lat, lon) |>
+  sf::st_as_sf(coords = c("lon", "lat"), crs = "WGS84")
+
+ggplot2::ggplot() +
+  ggspatial::annotation_map_tile(zoomin = -1) +
+  ggplot2::geom_sf(data = test_ons_shp, mapping = ggplot2::aes(fill = popwt_avg_time_s)) +
+  ggplot2::geom_sf(data = test_spaces_shp) +
+  ggplot2::labs(title = sprintf("Facility type: %s", test_type))
