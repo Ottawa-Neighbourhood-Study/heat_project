@@ -153,6 +153,7 @@ facility_coverage_one <- function(facility,
       costing == costing_name,
       contour == travel_limit
     ) |>
+    sf::st_make_valid() |>
     sf::st_union() |>
     sf::st_make_valid() |>
     suppressMessages()
@@ -254,12 +255,9 @@ get_db_top_bottom_distances <- function(
     dplyr::filter(facility_type %in% c(facilities_top, facilities_bottom)) |>
     dplyr::select(Parent_ID, lat, lon)
 
-
-  # errors <- c()
   results <- dplyr::tibble()
   to_batch_size <- 100
   to_batches <- ceiling(nrow(tos) / to_batch_size)
-
 
   # also batch the tos
   for (i in 0:(to_batches - 1)) {
@@ -284,3 +282,38 @@ get_db_top_bottom_distances <- function(
 
   results
 }
+
+
+
+
+# get neighbourhood-level population-weighted average travel times to
+# top 5 and bottom 5 heat coping spaces
+get_hood_times <- function(coping_spaces, db_top_bottom_distances) {
+  stats <- dplyr::left_join(
+    db_top_bottom_distances,
+    coping_spaces,
+    by = "Parent_ID"
+  ) |>
+    dplyr::select(DBUID, distance, time, facility_type)
+
+  stats <- stats |>
+    dplyr::left_join(neighbourhoodstudy::ottawa_dbs_pop2021, by = "DBUID") |>
+    dplyr::filter(dbpop2021 > 0) |>
+    dplyr::mutate(DAUID = substr(DBUID, 1, 8)) |>
+    dplyr::left_join(neighbourhoodstudy::sli_das_gen3_mape, by = "DAUID") |>
+    dplyr::group_by(DBUID, facility_type) |>
+    dplyr::arrange(time) |>
+    dplyr::slice_head(n = 1)
+
+
+  results <- stats |>
+    dplyr::group_by(ONS_ID, facility_type) |>
+    #  dplyr::filter(ONS_ID == "3001", facility_type == "fastfood")
+    # dplyr::arrange(ONS_ID, facility_type)
+    dplyr::summarise(
+      popwt_avg_time_s = sum(time * dbpop2021) / sum(dbpop2021),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(popwt_avg_time_s = round(popwt_avg_time_s, digits = 0))
+  results
+} # end function get_hood_times()

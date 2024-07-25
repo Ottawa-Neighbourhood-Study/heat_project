@@ -49,5 +49,13 @@ list(
       )
     )
   ),
+  targets::tar_target(hood_times, get_hood_times(coping_spaces, db_top_bottom_distances)),
+  targets::tar_target(save_hood_times, {
+    readr::write_csv(
+      hood_times,
+      sprintf("output/analysis_2_hood_travel_times-%s.csv", Sys.Date())
+    )
+    TRUE
+  }),
   NULL
 )

@@ -39,7 +39,7 @@ Suburban -- 10-minute walk (800m) AND 10-minute drive (5km)
 
 Rural -- 15-minute drive (16km) _using city of Ottawa boundaries only, not extended_
 
-# Analysis 2: Average distance to nearest “Top 5” facility
+# Analysis 2a: Average distance to nearest “Top 5” facility
 
 where facility_type =
 
@@ -49,7 +49,7 @@ where facility_type =
 - mall
 - shade_structure
 
-# Analysis 3: Average distance to nearest “Bottom 5” facility
+# Analysis 2b: Average distance to nearest “Bottom 5” facility
 
 where facility_type =
 
