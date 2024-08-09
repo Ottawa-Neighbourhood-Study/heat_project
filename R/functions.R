@@ -353,28 +353,58 @@ run_analysis_3 <- function(coping_isochrones, coping_spaces, phhs) {
     ))
 
   # URBAN
-  iso_now <- dplyr::filter(union_isos, rurality == "urban")
+  isos_urban <- dplyr::filter(
+    union_isos,
+    costing == "pedestrian",
+    contour == 10
+  )
+
   urban_coverage <- phhs |>
     dplyr::filter(rurality == "urban") |>
-    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, isos_urban) |> purrr::map_dbl(length)) |>
+    dplyr::mutate(costing = "pedestrian", contour = 15)
 
-  # SUBURBAN / TOWN
-  iso_now <- dplyr::filter(union_isos, rurality == "suburban/town")
-  suburban_town_coverage <- phhs |>
-    dplyr::filter(rurality %in% c("suburban", "town")) |>
-    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+  # SUBURBAN DRIVING
+  isos_suburb_drive <- dplyr::filter(
+    union_isos,
+    costing == "auto",
+    contour == 10
+  )
+
+  suburb_drive_coverage <- phhs |>
+    dplyr::filter(rurality == "suburban") |>
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, isos_suburb_drive) |> purrr::map_dbl(length)) |>
+    dplyr::mutate(costing = "auto", contour = 10)
+
+
+  # SUBURBAN WALKING
+  isos_suburb_walk <- dplyr::filter(
+    union_isos,
+    costing == "pedestrian",
+    contour == 10
+  )
+
+  suburb_walk_coverage <- phhs |>
+    dplyr::filter(rurality == "suburban") |>
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, isos_suburb_walk) |> purrr::map_dbl(length)) |>
+    dplyr::mutate(costing = "pedestrian", contour = 10)
 
 
   # RURAL
-  iso_now <- dplyr::filter(union_isos, rurality == "rural")
+  isos_rural <- dplyr::filter(
+    union_isos,
+    costing == "auto",
+    contour == 15
+  )
   rural_coverage <- phhs |>
     dplyr::filter(rurality == "rural") |>
-    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, isos_rural) |> purrr::map_dbl(length)) |>
+    dplyr::mutate(costing = "auto", contour = 15)
 
-  dplyr::bind_rows(urban_coverage, rural_coverage, suburban_town_coverage) |>
+  dplyr::bind_rows(urban_coverage, rural_coverage, suburb_drive_coverage, suburb_walk_coverage) |>
     sf::st_drop_geometry() |>
     dplyr::mutate(threshold_met = covered_by >= 2) |>
     dplyr::mutate(covered_pop = dbpop * threshold_met) |>
-    dplyr::group_by(ONS_ID, ONS_Name, rurality) |>
+    dplyr::group_by(ONS_ID, ONS_Name, rurality, costing, contour) |>
     dplyr::summarise(pct_covered = sum(covered_pop) / sum(dbpop))
 } # end function run_analysis_3()
