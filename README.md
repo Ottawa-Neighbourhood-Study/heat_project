@@ -58,3 +58,25 @@ where facility_type =
 - gallery
 - arena
 - movie_theatre
+
+# Analysis 3: % of population within threshold distance of at least 2 different top-10 facility types
+
+Where "facility_type" is one of
+
+- cmmt_centre
+- shade_structure
+- library
+- splash_pad
+- mall
+- wading_pool
+- cmmt_garden
+- beach
+- outdoor_pool
+- religious_centre
+
+Thresholds (same as previously)
+
+- Urban -> 10 minute walk
+- Suburban -> 10 minute walk
+- Suburban -> 10 minute drive
+- Rural -> 15 minute drive

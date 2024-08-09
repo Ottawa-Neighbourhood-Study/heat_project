@@ -57,5 +57,19 @@ list(
     )
     TRUE
   }),
+
+  ## ANALYSIS 3 - % pop covered by 2 or more different top-10 facilities
+  targets::tar_target(
+    analysis_3_results,
+    run_analysis_3(
+      coping_isochrones = coping_isochrones,
+      coping_spaces = coping_spaces,
+      phhs = phhs
+    )
+  ),
+  targets::tar_target(
+    save_analysis_3,
+    readr::write_csv(analysis_3_results, paste0("output/analysis_3_hood_coverage_pct-", Sys.Date(), ".csv"))
+  ),
   NULL
 )

@@ -317,3 +317,64 @@ get_hood_times <- function(coping_spaces, db_top_bottom_distances) {
     dplyr::mutate(popwt_avg_time_s = round(popwt_avg_time_s, digits = 0))
   results
 } # end function get_hood_times()
+
+
+
+
+run_analysis_3 <- function(coping_isochrones, coping_spaces, phhs) {
+  facility_types <- c(
+    "cmmt_centre",
+    "shade_structure",
+    "library",
+    "splash_pad",
+    "mall",
+    "wading_pool",
+    "cmmt_garden",
+    "beach",
+    "outdoor_pool",
+    "religious_centre"
+  )
+
+  sf::sf_use_s2(FALSE)
+  union_isos <- coping_isochrones |>
+    dplyr::left_join(coping_spaces, by = "Parent_ID") |>
+    dplyr::filter(facility_type %in% facility_types) |>
+    sf::st_make_valid() |>
+    dplyr::select(facility_type, costing, contour) |>
+    dplyr:::group_by(contour, costing, facility_type) |>
+    tidyr::nest() |>
+    dplyr::mutate(data = purrr::map(data, sf::st_union)) |>
+    tidyr::unnest() |>
+    sf::st_as_sf() |>
+    dplyr::mutate(rurality = dplyr::case_when(
+      costing == "auto" & contour == 15 ~ "rural",
+      costing == "pedestrian" ~ "urban",
+      TRUE ~ "suburban/town"
+    ))
+
+  # URBAN
+  iso_now <- dplyr::filter(union_isos, rurality == "urban")
+  urban_coverage <- phhs |>
+    dplyr::filter(rurality == "urban") |>
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+
+  # SUBURBAN / TOWN
+  iso_now <- dplyr::filter(union_isos, rurality == "suburban/town")
+  suburban_town_coverage <- phhs |>
+    dplyr::filter(rurality %in% c("suburban", "town")) |>
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+
+
+  # RURAL
+  iso_now <- dplyr::filter(union_isos, rurality == "rural")
+  rural_coverage <- phhs |>
+    dplyr::filter(rurality == "rural") |>
+    dplyr::mutate(covered_by = sf::st_intersects(geometry, iso_now) |> purrr::map_dbl(length))
+
+  dplyr::bind_rows(urban_coverage, rural_coverage, suburban_town_coverage) |>
+    sf::st_drop_geometry() |>
+    dplyr::mutate(threshold_met = covered_by >= 2) |>
+    dplyr::mutate(covered_pop = dbpop * threshold_met) |>
+    dplyr::group_by(ONS_ID, ONS_Name, rurality) |>
+    dplyr::summarise(pct_covered = sum(covered_pop) / sum(dbpop))
+} # end function run_analysis_3()

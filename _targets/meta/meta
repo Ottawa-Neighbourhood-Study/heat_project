@@ -1,5 +1,6 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|690179c786dddcf0|||||||||||||||
+.Random.seed|object|679fc5b9387bd22d|||||||||||||||
+analysis_3_results|stem|00390a7907055263|598e61efc047917a|0c6f2fef17980476|1383498244||t19944.8061575781s|705f7b22a9a02032|2907|rds|local|vector|||28.864|cols is now required when using unnest.ℹ Please use cols  cdata.|
 calculate_coping_isochrones|function|ae08b2ae18414afb|||||||||||||||
 calculate_phh_coping_travel|function|cafa8c86be5da0fb|||||||||||||||
 coping_isochrones|stem|a9218d1b4b9280ca|cbb20702e3fc04f3|cd4d38e89ade861e|1483774808||t19928.7714524788s|32c990584ce8c3db|73691456|rds|local|vector|||1261.833||
@@ -25,6 +26,8 @@ hood_times|stem|b7057d724a4b12c4|31d6f42f90accc23|9ff8e45e3278f60e|2021257179||t
 load_coping_spaces|function|97436e99b23429ca|||||||||||||||
 ons_shp|stem|4e2c125c4c135fa2|6b69e2d029ade849|2c530c1562a7fbd1|854065044||t19928.7564178514s|833fd1dc1aef659a|148700|rds|local|vector|||0.108||
 phhs|stem|247f1f83ef6434fb|7054d2e53aa71a34|7dcb58946cb9f7cd|-1897570363||t19928.8505180348s|984999601866ab9f|690011|rds|local|vector|||1.437||
+run_analysis_3|function|3291e21a4806a89a|||||||||||||||
+save_analysis_3|stem|00390a7907055263|8ca2528925f99f56|50ec193f5959d6c9|1748405782||t19944.8064712483s|705f7b22a9a02032|2907|rds|local|vector|||0.391||
 save_hood_times|stem|66877e6235e3c292|58438a4f15a84af4|6ebb555180460162|291269637||t19929.8409886251s|ba41eabafff2540f|48|rds|local|vector|||0.267||
 save_pct_coverage|function|5d58c815c4435b02|||||||||||||||
 save_pct_coverage_results|stem|66877e6235e3c292|b0279791625a8560|1b6313f877dfd749|1557523095||t19929.8182799825s|ba41eabafff2540f|48|rds|local|vector|||0.376||
